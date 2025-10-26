@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    include:
+      - actuator
+      - database
+      - flyway
+      - frontend
+      - jwt
+      - mail
+      - redis
+      - server
+      - swagger
