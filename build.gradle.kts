@@ -21,6 +21,9 @@ kotlin {
     }
 }
 
+springBoot {
+    buildInfo()
+}
 
 repositories {
     mavenCentral()
