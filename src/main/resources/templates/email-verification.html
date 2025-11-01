@@ -1,15 +1,31 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이메일 인증</title>
+    <meta charset="UTF-8"/>
 </head>
-<body>
-    <h2>이메일 인증</h2>
-    <p>회원가입을 완료하려면 아래 링크를 클릭해주세요.</p>
-    <a th:href="${verificationUrl}">이메일 인증하기</a>
-    <p>링크를 클릭할 수 없다면 다음 주소를 복사하여 브라우저에 붙여넣으세요:</p>
-    <p th:text="${verificationUrl}"></p>
+
+<body style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+<main style="width: 100%; overflow: visible; min-height: 100vh; max-width: 1024px; display: flex; flex-direction: column; justify-content: center; margin: 0 auto; padding: 0 40px;">
+    <div class="container">
+        <section style="display: flex; flex-direction: column; border-top: 1px solid #e3e1df;">
+            <p style="margin: 48px 0 64px 0; color: #ffbf00; font-size: 32px; font-weight: 600; line-height: 150%;">
+                메일 인증 안내
+            </p>
+            <p style="margin: 0 0 32px 0; color: #6a6969; font-size: 18px; font-weight: 500; line-height: 150%;">
+                거부기린과 함께 서비스를 시작할 준비 되셨나요?<br/>
+                아래 메일 인증 버튼을 클릭하여 회원가입을 완료해주세요.
+            </p>
+            <a th:href="${verificationUrl}"
+               style="display: inline-block; width: 200px; height: 49px; padding: 0 28px; border: none; border-radius: 999px; background-color: #ffcb31; color: #000000; font-size: 20px; font-weight: 500; line-height: 49px; text-align: center; text-decoration: none; cursor: pointer;">
+                메일 인증
+            </a>
+            <hr style="margin-top: 32px; width: 100%; height: 1px; border: none; background-color: #e3e1df;"/>
+            <p style="margin: 12px 0 0 0; color: #a8a7a4; font-size: 12px; font-weight: 500; line-height: 150%; word-break: break-all;">
+                만약 버튼이 정상적으로 클릭되지 않는다면 아래 링크를 복사하여 접속해주세요<br/>
+                <span th:text="${verificationUrl}">https://example.com/verify?token=sample</span>
+            </p>
+        </section>
+    </div>
+</main>
 </body>
 </html>
