@@ -5,13 +5,11 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.web.filter.OncePerRequestFilter
 import org.springframework.web.util.ContentCachingRequestWrapper
 import org.springframework.web.util.ContentCachingResponseWrapper
 
 @Configuration
-@Profile("!deployment")
 class RequestLoggingFilter : OncePerRequestFilter() {
 
     private val _logger = LoggerFactory.getLogger(RequestLoggingFilter::class.java)

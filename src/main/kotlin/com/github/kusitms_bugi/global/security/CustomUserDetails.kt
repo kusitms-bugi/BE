@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails
 import java.util.*
 
 class CustomUserDetails(
-    private val user: User
+    val user: User
 ) : UserDetails {
     fun getId(): UUID = user.id
 

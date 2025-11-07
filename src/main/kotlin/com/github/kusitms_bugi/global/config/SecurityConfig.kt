@@ -1,5 +1,7 @@
 package com.github.kusitms_bugi.global.config
 
+import com.github.kusitms_bugi.global.properties.FrontendProperties
+import com.github.kusitms_bugi.global.security.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -9,14 +11,15 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
-import com.github.kusitms_bugi.global.properties.FrontendProperties
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 class SecurityConfig(
-    private val frontendProperties: FrontendProperties
+    private val frontendProperties: FrontendProperties,
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter
 ) {
     @Bean
     fun passwordEncoder(): PasswordEncoder {
@@ -40,7 +43,12 @@ class SecurityConfig(
                 }
             }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
-            .authorizeHttpRequests { auth -> auth.anyRequest().permitAll() }
+            .authorizeHttpRequests { auth ->
+                auth
+                    .requestMatchers("/sessions/**").authenticated()
+                    .anyRequest().permitAll()
+            }
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
