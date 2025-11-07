@@ -26,6 +26,7 @@ class Session(
     @JoinColumn(name = "user_id", nullable = false)
     override var user: User,
 
+    @OrderBy("timestamp ASC")
     @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true)
     override var statusHistory: MutableList<SessionStatusHistory> = mutableListOf(),
 
@@ -33,7 +34,7 @@ class Session(
     override var metrics: MutableList<SessionMetric> = mutableListOf()
 ) : BaseEntity(), SessionField<SessionStatusHistory, SessionMetric> {
 
-    fun lastStatus(): SessionStatus? = statusHistory.maxByOrNull { it.timestamp }?.status
+    fun lastStatus(): SessionStatus? = statusHistory.lastOrNull()?.status
 }
 
 @Entity

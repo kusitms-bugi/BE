@@ -29,11 +29,10 @@ class SessionService(
             .takeIf { it == SessionStatus.STOPPED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_STOPPED)
 
-        val totalActiveTimeSeconds = calculateActiveTime(session)
-
         return GetSessionReportResponse(
-            sessionId = session.id,
-            totalActiveTimeSeconds = totalActiveTimeSeconds
+            totalSeconds = calculateTotalSeconds(session),
+            goodSeconds = calculateGoodSeconds(session),
+            score = 0
         )
     }
 
@@ -121,19 +120,19 @@ class SessionService(
     }
 }
 
-private fun calculateActiveTime(session: Session): Long {
-    val history = session.statusHistory.sortedBy { it.timestamp }
+private fun calculateTotalSeconds(session: Session): Long {
     var totalSeconds = 0L
     var activeStartTime: LocalDateTime? = null
 
-    history.forEach { event ->
-        when (event.status) {
+    session.statusHistory.forEach {
+        when (it.status) {
             SessionStatus.STARTED, SessionStatus.RESUMED -> {
-                activeStartTime = event.timestamp
+                activeStartTime = it.timestamp
             }
+
             SessionStatus.PAUSED, SessionStatus.STOPPED -> {
                 activeStartTime?.let { start ->
-                    totalSeconds += ChronoUnit.SECONDS.between(start, event.timestamp)
+                    totalSeconds += ChronoUnit.SECONDS.between(start, it.timestamp)
                     activeStartTime = null
                 }
             }
@@ -141,4 +140,20 @@ private fun calculateActiveTime(session: Session): Long {
     }
 
     return totalSeconds
+}
+
+private fun calculateGoodSeconds(session: Session): Long {
+    var totalSeconds = 0.0
+    var previousMetric: SessionMetric? = null
+
+    session.metrics.forEach {
+        previousMetric?.let { metric ->
+            if (it.score <= 1.2) {
+                totalSeconds += ChronoUnit.MILLIS.between(metric.timestamp, it.timestamp)
+            }
+        }
+        previousMetric = it
+    }
+
+    return (totalSeconds / 1_000).toLong()
 }
