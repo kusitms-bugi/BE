@@ -1,7 +1,8 @@
 package com.github.kusitms_bugi.domain.user.infrastructure
 
-import com.github.kusitms_bugi.domain.user.domain.User
 import com.github.kusitms_bugi.domain.user.domain.UserRepository
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.UserJpaRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import java.util.*
@@ -20,9 +21,5 @@ class UserRepositoryImpl(
 
     override fun findByEmail(email: String): User? {
         return userJpaRepository.findByEmail(email)
-    }
-
-    override fun findAll(): List<User> {
-        return userJpaRepository.findAll()
     }
 }

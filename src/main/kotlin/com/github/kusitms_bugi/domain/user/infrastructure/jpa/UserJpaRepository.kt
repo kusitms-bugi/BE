@@ -1,6 +1,5 @@
-package com.github.kusitms_bugi.domain.user.infrastructure
+package com.github.kusitms_bugi.domain.user.infrastructure.jpa
 
-import com.github.kusitms_bugi.domain.user.domain.User
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.*
 

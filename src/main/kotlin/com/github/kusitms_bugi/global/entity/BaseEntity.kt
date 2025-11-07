@@ -34,3 +34,10 @@ abstract class BaseEntity {
 
     fun isDeleted(): Boolean = deletedAt != null
 }
+
+interface BaseField {
+    val id: UUID
+    var createdAt: LocalDateTime
+    var updatedAt: LocalDateTime
+    var deletedAt: LocalDateTime?
+}

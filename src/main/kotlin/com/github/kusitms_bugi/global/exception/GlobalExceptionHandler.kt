@@ -6,7 +6,7 @@ import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.HttpMediaTypeException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
-import org.springframework.web.bind.MissingServletRequestParameterException
+import org.springframework.web.bind.MissingRequestValueException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
@@ -58,8 +58,8 @@ class GlobalExceptionHandler {
         return ApiResponse.failure(ApiException(GlobalExceptionCode.VALIDATION_FAILED, errors, ex))
     }
 
-    @ExceptionHandler(MissingServletRequestParameterException::class)
-    fun handleMissingParameter(ex: MissingServletRequestParameterException): ApiResponse<Unit> {
+    @ExceptionHandler(MissingRequestValueException::class)
+    fun handleMissingParameter(ex: MissingRequestValueException): ApiResponse<Unit> {
         return ApiResponse.failure(ApiException(GlobalExceptionCode.MISSING_PARAMETER, ex))
     }
 

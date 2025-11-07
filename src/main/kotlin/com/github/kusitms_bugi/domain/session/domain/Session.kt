@@ -1,19 +1,30 @@
 package com.github.kusitms_bugi.domain.session.domain
 
-import com.github.kusitms_bugi.domain.user.domain.User
-import com.github.kusitms_bugi.global.entity.BaseEntity
-import jakarta.persistence.*
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
+import com.github.kusitms_bugi.global.entity.BaseField
+import java.time.LocalDateTime
 
-@Entity
-@Table(name = "session")
-class Session(
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    var user: User,
+enum class SessionStatus {
+    STARTED,
+    PAUSED,
+    RESUMED,
+    STOPPED
+}
 
-    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var statusHistory: MutableList<SessionStatusHistory> = mutableListOf(),
+interface SessionField<SESSION_STATUS_HISTORY, SESSION_METRIC> : BaseField {
+    var user: User
+    var statusHistory: MutableList<SESSION_STATUS_HISTORY>
+    var metrics: MutableList<SESSION_METRIC>
+}
 
-    @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true)
-    var metrics: MutableList<SessionMetric> = mutableListOf()
-) : BaseEntity()
+interface SessionStatusHistoryField<SESSION> : BaseField {
+    var session: SESSION
+    var status: SessionStatus
+    var timestamp: LocalDateTime
+}
+
+interface SessionMetricField<SESSION> : BaseField {
+    var session: SESSION
+    var score: Double
+    var timestamp: LocalDateTime
+}

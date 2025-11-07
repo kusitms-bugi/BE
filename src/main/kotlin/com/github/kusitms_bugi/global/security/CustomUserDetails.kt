@@ -1,6 +1,6 @@
 package com.github.kusitms_bugi.global.security
 
-import com.github.kusitms_bugi.domain.user.domain.User
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails

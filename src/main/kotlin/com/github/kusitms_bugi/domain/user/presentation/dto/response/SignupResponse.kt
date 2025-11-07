@@ -1,6 +1,6 @@
 package com.github.kusitms_bugi.domain.user.presentation.dto.response
 
-import com.github.kusitms_bugi.domain.user.domain.User
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import java.util.*
 
 data class SignupResponse(

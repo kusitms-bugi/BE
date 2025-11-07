@@ -1,7 +1,6 @@
 package com.github.kusitms_bugi.domain.user.presentation
 
 import com.github.kusitms_bugi.domain.user.application.UserService
-import com.github.kusitms_bugi.domain.user.domain.UserApi
 import com.github.kusitms_bugi.domain.user.presentation.dto.request.*
 import com.github.kusitms_bugi.domain.user.presentation.dto.response.CheckEmailDuplicateResponse
 import com.github.kusitms_bugi.domain.user.presentation.dto.response.LoginResponse

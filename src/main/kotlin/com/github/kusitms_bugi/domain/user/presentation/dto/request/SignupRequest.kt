@@ -1,6 +1,6 @@
 package com.github.kusitms_bugi.domain.user.presentation.dto.request
 
-import com.github.kusitms_bugi.domain.user.domain.User
+import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import com.github.kusitms_bugi.global.validator.AllowedOrigin
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank

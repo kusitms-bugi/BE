@@ -1,4 +1,4 @@
-package com.github.kusitms_bugi.domain.user.domain
+package com.github.kusitms_bugi.domain.user.presentation
 
 import com.github.kusitms_bugi.domain.user.presentation.dto.request.*
 import com.github.kusitms_bugi.domain.user.presentation.dto.response.CheckEmailDuplicateResponse

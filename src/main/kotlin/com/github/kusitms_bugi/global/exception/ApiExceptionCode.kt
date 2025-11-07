@@ -20,19 +20,29 @@ enum class GlobalExceptionCode(
     MISSING_PARAMETER("GLOBAL-302", "필수 요청 파라미터가 누락되었습니다."),
     TYPE_MISMATCH("GLOBAL-303", "요청 파라미터 타입이 올바르지 않습니다."),
 
-    NO_REDIRECT_URI("GLOBAL-401", "리다이렉트 URI가 없습니다."),
-    UNAUTHORIZED_REDIRECT_URI("GLOBAL-402", "허용되지 않은 리다이렉트 URI입니다."),
-    NOT_AUTHENTICATED("GLOBAL-403", "인증되지 않은 사용자입니다."),
+    NOT_AUTHENTICATED("GLOBAL-403", "권한이 없습니다."),
 }
 
 enum class UserExceptionCode(
     override val code: String,
     override val message: String
 ) : ApiExceptionCode {
-    USER_NOT_FOUND("USER-001", "사용자를 찾을 수 없습니다."),
-    EMAIL_ALREADY_EXISTS("USER-002", "이미 존재하는 이메일입니다."),
-    INVALID_TOKEN("USER-003", "유효하지 않은 토큰입니다."),
-    USER_NOT_ACTIVE("USER-004", "이메일 인증이 완료되지 않은 사용자입니다."),
-    USER_ALREADY_ACTIVE("USER-005", "이미 이메일 인증이 완료된 사용자입니다."),
-    INVALID_REFRESH_TOKEN("USER-006", "유효하지 않은 리프레시 토큰입니다."),
+    USER_NOT_FOUND("USER-100", "사용자를 찾을 수 없습니다."),
+    INVALID_TOKEN("USER-101", "유효하지 않은 토큰입니다."),
+    INVALID_REFRESH_TOKEN("USER-002", "유효하지 않은 리프레시 토큰입니다."),
+    USER_NOT_ACTIVE("USER-103", "이메일 인증이 완료되지 않은 사용자입니다."),
+
+    EMAIL_ALREADY_EXISTS("USER-201", "이미 존재하는 이메일입니다."),
+    USER_ALREADY_ACTIVE("USER-202", "이미 이메일 인증이 완료된 사용자입니다."),
+}
+
+enum class SessionExceptionCode(
+    override val code: String,
+    override val message: String
+) : ApiExceptionCode {
+    SESSION_ALREADY_STOPPED("SESSION-101", "이미 종료된 세션입니다."),
+    SESSION_NOT_STOPPED("SESSION-102", "종료되지 않은 세션입니다."),
+    SESSION_NOT_RESUMED("SESSION-103", "일시정지 상태가 아닌 세션입니다."),
+    SESSION_NOT_PAUSED("SESSION-104", "재개 상태가 아닌 세션입니다."),
+    SESSION_NOT_ACTIVE("SESSION-105", "활성 상태가 아닌 세션입니다."),
 }
