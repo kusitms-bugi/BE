@@ -146,14 +146,40 @@ private fun calculateGoodSeconds(session: Session): Long {
     var totalSeconds = 0.0
     var previousMetric: SessionMetric? = null
 
-    session.metrics.forEach {
-        previousMetric?.let { metric ->
-            if (it.score <= 1.2) {
-                totalSeconds += ChronoUnit.MILLIS.between(metric.timestamp, it.timestamp)
+    session.metrics.forEach { metric ->
+        previousMetric?.let { prev ->
+            if (metric.score <= 1.2) {
+                val duration = ChronoUnit.MILLIS.between(prev.timestamp, metric.timestamp)
+                val pausedDuration = calculatePausedDuration(session, prev.timestamp, metric.timestamp)
+                totalSeconds += (duration - pausedDuration)
             }
         }
-        previousMetric = it
+        previousMetric = metric
     }
 
     return (totalSeconds / 1_000).toLong()
+}
+
+private fun calculatePausedDuration(session: Session, start: LocalDateTime, end: LocalDateTime): Long {
+    var pausedMillis = 0L
+    var pauseStartTime: LocalDateTime? = null
+
+    session.statusHistory
+        .filter { it.timestamp in start..end }
+        .forEach { history ->
+            when (history.status) {
+                SessionStatus.PAUSED -> {
+                    pauseStartTime = history.timestamp
+                }
+                SessionStatus.RESUMED -> {
+                    pauseStartTime?.let { pauseStart ->
+                        pausedMillis += ChronoUnit.MILLIS.between(pauseStart, history.timestamp)
+                        pauseStartTime = null
+                    }
+                }
+                else -> {}
+            }
+        }
+
+    return pausedMillis
 }
