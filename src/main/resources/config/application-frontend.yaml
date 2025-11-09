@@ -1,0 +1,2 @@
+frontend:
+  allowed-origins: ${ALLOWED_ORIGINS}
