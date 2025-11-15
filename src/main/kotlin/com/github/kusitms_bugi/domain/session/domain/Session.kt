@@ -15,6 +15,7 @@ interface SessionField<SESSION_STATUS_HISTORY, SESSION_METRIC> : BaseField {
     var user: User
     var statusHistory: MutableList<SESSION_STATUS_HISTORY>
     var metrics: MutableList<SESSION_METRIC>
+    var score: Int?
 }
 
 interface SessionStatusHistoryField<SESSION> : BaseField {

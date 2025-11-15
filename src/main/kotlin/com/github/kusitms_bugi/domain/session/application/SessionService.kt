@@ -14,12 +14,11 @@ import com.github.kusitms_bugi.global.exception.SessionExceptionCode
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 @Service
 class SessionService(
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val scoreService: com.github.kusitms_bugi.domain.dashboard.application.ScoreService
 ) {
 
     @Transactional(readOnly = true)
@@ -30,9 +29,9 @@ class SessionService(
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_STOPPED)
 
         return GetSessionReportResponse(
-            totalSeconds = calculateTotalSeconds(session),
-            goodSeconds = calculateGoodSeconds(session),
-            score = 0
+            totalSeconds = session.calculateTotalActiveSeconds(),
+            goodSeconds = session.calculateGoodSeconds(),
+            score = scoreService.calculateScoreFromSession(session)
         )
     }
 
@@ -98,6 +97,8 @@ class SessionService(
             )
         )
 
+        session.score = scoreService.calculateScoreFromSession(session)
+
         sessionRepository.save(session)
     }
 
@@ -118,68 +119,4 @@ class SessionService(
 
         sessionRepository.save(session)
     }
-}
-
-private fun calculateTotalSeconds(session: Session): Long {
-    var totalSeconds = 0L
-    var activeStartTime: LocalDateTime? = null
-
-    session.statusHistory.forEach {
-        when (it.status) {
-            SessionStatus.STARTED, SessionStatus.RESUMED -> {
-                activeStartTime = it.timestamp
-            }
-
-            SessionStatus.PAUSED, SessionStatus.STOPPED -> {
-                activeStartTime?.let { start ->
-                    totalSeconds += ChronoUnit.SECONDS.between(start, it.timestamp)
-                    activeStartTime = null
-                }
-            }
-        }
-    }
-
-    return totalSeconds
-}
-
-private fun calculateGoodSeconds(session: Session): Long {
-    var totalSeconds = 0.0
-    var previousMetric: SessionMetric? = null
-
-    session.metrics.forEach { metric ->
-        previousMetric?.let { prev ->
-            if (metric.score <= 1.2) {
-                val duration = ChronoUnit.MILLIS.between(prev.timestamp, metric.timestamp)
-                val pausedDuration = calculatePausedDuration(session, prev.timestamp, metric.timestamp)
-                totalSeconds += (duration - pausedDuration)
-            }
-        }
-        previousMetric = metric
-    }
-
-    return (totalSeconds / 1_000).toLong()
-}
-
-private fun calculatePausedDuration(session: Session, start: LocalDateTime, end: LocalDateTime): Long {
-    var pausedMillis = 0L
-    var pauseStartTime: LocalDateTime? = null
-
-    session.statusHistory
-        .filter { it.timestamp in start..end }
-        .forEach { history ->
-            when (history.status) {
-                SessionStatus.PAUSED -> {
-                    pauseStartTime = history.timestamp
-                }
-                SessionStatus.RESUMED -> {
-                    pauseStartTime?.let { pauseStart ->
-                        pausedMillis += ChronoUnit.MILLIS.between(pauseStart, history.timestamp)
-                        pauseStartTime = null
-                    }
-                }
-                else -> {}
-            }
-        }
-
-    return pausedMillis
 }
