@@ -1,5 +1,6 @@
 package com.github.kusitms_bugi.domain.session.application
 
+import com.github.kusitms_bugi.domain.dashboard.application.ScoreService
 import com.github.kusitms_bugi.domain.session.domain.SessionRepository
 import com.github.kusitms_bugi.domain.session.domain.SessionStatus
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
@@ -18,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class SessionService(
     private val sessionRepository: SessionRepository,
-    private val scoreService: com.github.kusitms_bugi.domain.dashboard.application.ScoreService
+    private val scoreService: ScoreService
 ) {
 
     @Transactional(readOnly = true)
