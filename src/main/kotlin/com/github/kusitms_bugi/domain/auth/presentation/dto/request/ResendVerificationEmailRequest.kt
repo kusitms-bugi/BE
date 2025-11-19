@@ -1,4 +1,4 @@
-package com.github.kusitms_bugi.domain.user.presentation.dto.request
+package com.github.kusitms_bugi.domain.auth.presentation.dto.request
 
 import com.github.kusitms_bugi.global.validator.AllowedOrigin
 import jakarta.validation.constraints.Email

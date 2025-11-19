@@ -1,8 +1,18 @@
-package com.github.kusitms_bugi.domain.user.application
+package com.github.kusitms_bugi.domain.auth.application
 
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.CheckEmailDuplicateRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.LoginRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.RefreshTokenRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.ResendVerificationEmailRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.SignupRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.VerifyEmailRequest
+import com.github.kusitms_bugi.domain.auth.presentation.dto.request.toEntity
+import com.github.kusitms_bugi.domain.auth.presentation.dto.response.CheckEmailDuplicateResponse
+import com.github.kusitms_bugi.domain.auth.presentation.dto.response.LoginResponse
+import com.github.kusitms_bugi.domain.auth.presentation.dto.response.RefreshTokenResponse
+import com.github.kusitms_bugi.domain.auth.presentation.dto.response.SignupResponse
+import com.github.kusitms_bugi.domain.auth.presentation.dto.response.toResponse
 import com.github.kusitms_bugi.domain.user.domain.UserRepository
-import com.github.kusitms_bugi.domain.user.presentation.dto.request.*
-import com.github.kusitms_bugi.domain.user.presentation.dto.response.*
 import com.github.kusitms_bugi.global.exception.ApiException
 import com.github.kusitms_bugi.global.exception.UserExceptionCode
 import com.github.kusitms_bugi.global.mail.EmailService
@@ -13,7 +23,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class UserService(
+class AuthService(
     private val emailService: EmailService,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
