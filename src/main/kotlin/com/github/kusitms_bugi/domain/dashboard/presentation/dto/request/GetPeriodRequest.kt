@@ -19,6 +19,6 @@ data class GetPeriodRequest(
     var month: Int? = null
 ) {
     enum class Period {
-        MONTHLY, YEARLY
+        WEEKLY, MONTHLY, YEARLY
     }
 }
