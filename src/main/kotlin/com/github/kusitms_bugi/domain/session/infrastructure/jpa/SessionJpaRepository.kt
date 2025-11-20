@@ -9,7 +9,7 @@ import java.util.*
 
 interface SessionJpaRepository : JpaRepository<Session, UUID> {
 
-    @Query("SELECT s FROM Session s LEFT JOIN FETCH s.statusHistory LEFT JOIN FETCH s.metrics WHERE s.id = :id")
+    @Query("SELECT DISTINCT s FROM Session s LEFT JOIN FETCH s.statusHistory LEFT JOIN FETCH s.metrics WHERE s.id = :id")
     override fun findById(@Param("id") id: UUID): Optional<Session>
 
     @Query("SELECT DISTINCT s FROM Session s LEFT JOIN FETCH s.statusHistory LEFT JOIN FETCH s.metrics WHERE s.user = :user")
