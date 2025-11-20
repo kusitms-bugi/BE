@@ -39,10 +39,9 @@ class DashboardController(
     }
 
     override fun getPostureGraph(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ApiResponse<PostureGraphResponse> {
-        return ApiResponse.success(postureGraphService.getPostureGraph(userDetails.user, request))
+        return ApiResponse.success(postureGraphService.getPostureGraph(userDetails.user))
     }
 
     override fun getHighlight(

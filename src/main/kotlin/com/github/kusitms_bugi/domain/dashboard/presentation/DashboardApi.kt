@@ -35,11 +35,10 @@ interface DashboardApi {
         @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ApiResponse<LevelResponse>
 
-    @Operation(summary = "바른 자세 점수 그래프 조회")
+    @Operation(summary = "바른 자세 점수 그래프 조회 (최근 31일)")
     @GetMapping("/posture-graph")
     fun getPostureGraph(
-        @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ApiResponse<PostureGraphResponse>
 
     @Operation(summary = "하이라이트 조회")
