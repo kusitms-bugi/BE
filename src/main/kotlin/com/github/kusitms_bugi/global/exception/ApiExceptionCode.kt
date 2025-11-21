@@ -47,9 +47,11 @@ enum class SessionExceptionCode(
     override val code: String,
     override val message: String
 ) : ApiExceptionCode {
-    SESSION_ALREADY_STOPPED("SESSION-101", "이미 종료된 세션입니다."),
-    SESSION_NOT_STOPPED("SESSION-102", "종료되지 않은 세션입니다."),
-    SESSION_NOT_RESUMED("SESSION-103", "일시정지 상태가 아닌 세션입니다."),
-    SESSION_NOT_PAUSED("SESSION-104", "재개 상태가 아닌 세션입니다."),
-    SESSION_NOT_ACTIVE("SESSION-105", "활성 상태가 아닌 세션입니다."),
+    SESSION_NOT_FOUND("SESSION-100", "세션을 찾을 수 없습니다."),
+    SESSION_ACCESS_DENIED("SESSION-101", "세션에 접근할 권한이 없습니다."),
+    SESSION_ALREADY_STOPPED("SESSION-102", "이미 종료된 세션입니다."),
+    SESSION_NOT_STOPPED("SESSION-103", "종료되지 않은 세션입니다."),
+    SESSION_NOT_RESUMED("SESSION-104", "일시정지 상태가 아닌 세션입니다."),
+    SESSION_NOT_PAUSED("SESSION-105", "재개 상태가 아닌 세션입니다."),
+    SESSION_NOT_ACTIVE("SESSION-106", "활성 상태가 아닌 세션입니다."),
 }

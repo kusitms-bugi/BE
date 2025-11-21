@@ -1,8 +1,8 @@
 package com.github.kusitms_bugi.domain.session.application
 
 import com.github.kusitms_bugi.domain.dashboard.application.ScoreService
-import com.github.kusitms_bugi.domain.session.domain.SessionRepository
 import com.github.kusitms_bugi.domain.session.domain.SessionStatus
+import com.github.kusitms_bugi.domain.session.infrastructure.SessionRepositoryImpl
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionMetric
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionStatusHistory
@@ -12,19 +12,26 @@ import com.github.kusitms_bugi.domain.session.presentation.dto.response.GetSessi
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import com.github.kusitms_bugi.global.exception.ApiException
 import com.github.kusitms_bugi.global.exception.SessionExceptionCode
-import org.springframework.security.access.prepost.PreAuthorize
+import com.github.kusitms_bugi.global.security.CustomUserDetails
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.*
 
 @Service
 class SessionService(
-    private val sessionRepository: SessionRepository,
+    private val sessionRepository: SessionRepositoryImpl,
     private val scoreService: ScoreService
 ) {
 
     @Transactional(readOnly = true)
-    @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun getSession(session: Session): GetSessionReportResponse {
+    fun getSession(sessionId: UUID, userDetails: CustomUserDetails): GetSessionReportResponse {
+        val session = sessionRepository.findByIdWithDetails(sessionId)
+            ?: throw ApiException(SessionExceptionCode.SESSION_NOT_FOUND)
+
+        if (session.user.id != userDetails.getId()) {
+            throw ApiException(SessionExceptionCode.SESSION_ACCESS_DENIED)
+        }
+
         session.lastStatus()
             .takeIf { it == SessionStatus.STOPPED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_STOPPED)
@@ -51,8 +58,14 @@ class SessionService(
     }
 
     @Transactional
-    @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun pauseSession(session: Session) {
+    fun pauseSession(sessionId: UUID, userDetails: CustomUserDetails) {
+        val session = sessionRepository.findByIdWithStatusHistory(sessionId)
+            ?: throw ApiException(SessionExceptionCode.SESSION_NOT_FOUND)
+
+        if (session.user.id != userDetails.getId()) {
+            throw ApiException(SessionExceptionCode.SESSION_ACCESS_DENIED)
+        }
+
         session.lastStatus()
             .takeIf { it == SessionStatus.STARTED || it == SessionStatus.RESUMED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_RESUMED)
@@ -68,8 +81,14 @@ class SessionService(
     }
 
     @Transactional
-    @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun resumeSession(session: Session) {
+    fun resumeSession(sessionId: UUID, userDetails: CustomUserDetails) {
+        val session = sessionRepository.findByIdWithStatusHistory(sessionId)
+            ?: throw ApiException(SessionExceptionCode.SESSION_NOT_FOUND)
+
+        if (session.user.id != userDetails.getId()) {
+            throw ApiException(SessionExceptionCode.SESSION_ACCESS_DENIED)
+        }
+
         session.lastStatus()
             .takeIf { it == SessionStatus.PAUSED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_PAUSED)
@@ -85,8 +104,14 @@ class SessionService(
     }
 
     @Transactional
-    @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun stopSession(session: Session) {
+    fun stopSession(sessionId: UUID, userDetails: CustomUserDetails) {
+        val session = sessionRepository.findByIdWithDetails(sessionId)
+            ?: throw ApiException(SessionExceptionCode.SESSION_NOT_FOUND)
+
+        if (session.user.id != userDetails.getId()) {
+            throw ApiException(SessionExceptionCode.SESSION_ACCESS_DENIED)
+        }
+
         session.lastStatus()
             .takeUnless { it == SessionStatus.STOPPED }
             ?: throw ApiException(SessionExceptionCode.SESSION_ALREADY_STOPPED)
@@ -104,8 +129,15 @@ class SessionService(
     }
 
     @Transactional
-    @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun saveMetrics(session: Session, request: Collection<MetricData>) {
+    fun saveMetrics(sessionId: UUID, userDetails: CustomUserDetails, request: Collection<MetricData>) {
+        // statusHistory와 metrics 모두 필요하므로 findByIdWithDetails 사용
+        val session = sessionRepository.findByIdWithDetails(sessionId)
+            ?: throw ApiException(SessionExceptionCode.SESSION_NOT_FOUND)
+
+        if (session.user.id != userDetails.getId()) {
+            throw ApiException(SessionExceptionCode.SESSION_ACCESS_DENIED)
+        }
+
         session.lastStatus()
             .takeIf { it == SessionStatus.STARTED || it == SessionStatus.RESUMED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_ACTIVE)

@@ -17,4 +17,16 @@ class SessionRepositoryImpl(
     override fun save(session: Session): Session {
         return sessionJpaRepository.save(session)
     }
+
+    fun findByIdWithDetails(id: UUID): Session? {
+        return sessionJpaRepository.findByIdWithDetails(id).orElse(null)
+    }
+
+    fun findByIdWithStatusHistory(id: UUID): Session? {
+        return sessionJpaRepository.findByIdWithStatusHistory(id).orElse(null)
+    }
+
+    fun findByIdWithMetrics(id: UUID): Session? {
+        return sessionJpaRepository.findByIdWithMetrics(id).orElse(null)
+    }
 }
