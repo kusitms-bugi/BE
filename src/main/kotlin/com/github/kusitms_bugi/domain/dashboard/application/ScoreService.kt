@@ -5,11 +5,7 @@ import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionMetric
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.LocalDateTime
-import kotlin.math.abs
-import kotlin.math.exp
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.round
+import kotlin.math.*
 
 @Service
 class ScoreService {
@@ -60,7 +56,7 @@ class ScoreService {
     private fun extractStreaks(
         activeMetrics: List<SessionMetric>,
         session: Session,
-        condition: (Double) -> Boolean
+        condition: (Int) -> Boolean
     ): List<Double> {
         if (activeMetrics.isEmpty()) return emptyList()
 
@@ -121,7 +117,7 @@ class ScoreService {
         activeMetrics: List<SessionMetric>,
         sessionLength: Double
     ): Double {
-        val goodStreaks = extractStreaks(activeMetrics, session) { score -> score <= 2.0 }
+        val goodStreaks = extractStreaks(activeMetrics, session) { score -> score >= 4 }
         if (goodStreaks.isEmpty()) return 0.0
 
         val baseGood = goodStreaks.sumOf { streak ->
@@ -145,7 +141,7 @@ class ScoreService {
         activeMetrics: List<SessionMetric>,
         sessionLength: Double
     ): Double {
-        val badStreaks = extractStreaks(activeMetrics, session) { score -> score >= 5.0 }
+        val badStreaks = extractStreaks(activeMetrics, session) { score -> score <= 3 }
         if (badStreaks.isEmpty()) return 0.0
 
         val baseBad = badStreaks.sumOf { streak ->

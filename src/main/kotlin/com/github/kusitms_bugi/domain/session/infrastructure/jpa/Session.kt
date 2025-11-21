@@ -95,7 +95,7 @@ class Session(
         val levelDurations = (1..6).associateWith { 0L }.toMutableMap()
 
         activeMetrics.zipWithNext().forEach { (current, next) ->
-            val level = current.score.toInt().coerceIn(1, 6)
+            val level = current.score.coerceIn(1, 6)
             val duration = Duration.between(current.timestamp, next.timestamp)
             val pausedDuration = calculatePausedDuration(current.timestamp, next.timestamp)
             val activeDuration = duration.minus(pausedDuration).toMillis()
@@ -110,7 +110,7 @@ class Session(
 
     fun calculateGoodSeconds(): Long {
         return metrics.zipWithNext()
-            .filter { (_, current) -> current.score <= 1.2 }
+            .filter { (_, current) -> current.score >= 4 }
             .sumOf { (prev, current) ->
                 val duration = ChronoUnit.MILLIS.between(prev.timestamp, current.timestamp)
                 val pausedDuration = calculatePausedDuration(prev.timestamp, current.timestamp).toMillis()
@@ -145,9 +145,8 @@ class SessionMetric(
     override var session: Session,
 
     @Column(nullable = false)
-    override var score: Double,
+    override var score: Int,
 
-    @CreatedDate
     @Column(nullable = false)
-    override var timestamp: LocalDateTime = LocalDateTime.now()
+    override var timestamp: LocalDateTime
 ) : BaseEntity(), SessionMetricField<Session>

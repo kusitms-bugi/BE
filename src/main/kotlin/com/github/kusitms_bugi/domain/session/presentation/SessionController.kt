@@ -2,7 +2,7 @@ package com.github.kusitms_bugi.domain.session.presentation
 
 import com.github.kusitms_bugi.domain.session.application.SessionService
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
-import com.github.kusitms_bugi.domain.session.presentation.dto.request.SaveMetricsRequest
+import com.github.kusitms_bugi.domain.session.presentation.dto.request.MetricData
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.CreateSessionResponse
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.GetSessionReportResponse
 import com.github.kusitms_bugi.global.response.ApiResponse
@@ -37,7 +37,7 @@ class SessionController(
         return ApiResponse.success()
     }
 
-    override fun saveMetrics(session: Session, request: SaveMetricsRequest): ApiResponse<Unit> {
+    override fun saveMetrics(session: Session, request: List<MetricData>): ApiResponse<Unit> {
         sessionService.saveMetrics(session, request)
         return ApiResponse.success()
     }

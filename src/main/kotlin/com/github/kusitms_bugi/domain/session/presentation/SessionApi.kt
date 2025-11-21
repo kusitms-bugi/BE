@@ -1,7 +1,7 @@
 package com.github.kusitms_bugi.domain.session.presentation
 
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
-import com.github.kusitms_bugi.domain.session.presentation.dto.request.SaveMetricsRequest
+import com.github.kusitms_bugi.domain.session.presentation.dto.request.MetricData
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.CreateSessionResponse
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.GetSessionReportResponse
 import com.github.kusitms_bugi.global.response.ApiResponse
@@ -52,6 +52,6 @@ interface SessionApi {
     @PostMapping("/{session}/metrics")
     fun saveMetrics(
         @Parameter(description = "세션 ID", schema = Schema(type = "string", format = "uuid")) @PathVariable session: Session,
-        @Validated @RequestBody request: SaveMetricsRequest
+        @Validated @RequestBody request: List<MetricData>
     ): ApiResponse<Unit>
 }

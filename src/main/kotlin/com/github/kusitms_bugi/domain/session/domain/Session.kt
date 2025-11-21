@@ -26,6 +26,6 @@ interface SessionStatusHistoryField<SESSION> : BaseField {
 
 interface SessionMetricField<SESSION> : BaseField {
     var session: SESSION
-    var score: Double
+    var score: Int
     var timestamp: LocalDateTime
 }

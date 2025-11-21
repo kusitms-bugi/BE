@@ -1,0 +1,1 @@
+ALTER TABLE session_metric ALTER COLUMN score TYPE INTEGER;

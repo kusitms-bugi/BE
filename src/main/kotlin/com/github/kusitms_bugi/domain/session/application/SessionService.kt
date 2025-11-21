@@ -6,7 +6,7 @@ import com.github.kusitms_bugi.domain.session.domain.SessionStatus
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionMetric
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionStatusHistory
-import com.github.kusitms_bugi.domain.session.presentation.dto.request.SaveMetricsRequest
+import com.github.kusitms_bugi.domain.session.presentation.dto.request.MetricData
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.CreateSessionResponse
 import com.github.kusitms_bugi.domain.session.presentation.dto.response.GetSessionReportResponse
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
@@ -105,17 +105,17 @@ class SessionService(
 
     @Transactional
     @PreAuthorize("@sessionPermissionEvaluator.canAccessSession(principal, #session)")
-    fun saveMetrics(session: Session, request: SaveMetricsRequest) {
+    fun saveMetrics(session: Session, request: Collection<MetricData>) {
         session.lastStatus()
             .takeIf { it == SessionStatus.STARTED || it == SessionStatus.RESUMED }
             ?: throw ApiException(SessionExceptionCode.SESSION_NOT_ACTIVE)
 
-        request.metrics.forEach { metricData ->
+        request.forEach {
             SessionMetric(
                 session = session,
-                score = metricData.score,
-                timestamp = metricData.timestamp
-            ).let { session.metrics.add(it) }
+                score = it.score,
+                timestamp = it.timestamp
+            ).let { metric -> session.metrics.add(metric) }
         }
 
         sessionRepository.save(session)
