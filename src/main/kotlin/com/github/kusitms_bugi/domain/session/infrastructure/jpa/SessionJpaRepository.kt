@@ -155,7 +155,7 @@ interface SessionJpaRepository : JpaRepository<Session, UUID> {
                 GROUP BY ar.session_id
             )
             SELECT
-                COALESCE(ROUND(AVG(bad_duration_millis / 1000.0)), 0) as avg_bad_seconds_per_session
+                COALESCE(ROUND(SUM(bad_duration_millis) / 60000.0 / COUNT(*)), 0) as avg_bad_minutes_per_session
             FROM session_bad_durations
             WHERE bad_duration_millis > 0
         """,
