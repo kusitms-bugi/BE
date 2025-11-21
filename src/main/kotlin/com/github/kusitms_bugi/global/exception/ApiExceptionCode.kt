@@ -23,14 +23,21 @@ enum class GlobalExceptionCode(
     NOT_AUTHENTICATED("GLOBAL-403", "권한이 없습니다."),
 }
 
+enum class AuthExceptionCode(
+    override val code: String,
+    override val message: String
+) : ApiExceptionCode {
+    INVALID_TOKEN("AUTH-100", "유효하지 않은 토큰입니다."),
+    TOKEN_EXPIRED("AUTH-101", "만료된 토큰입니다."),
+    INVALID_REFRESH_TOKEN("AUTH-102", "유효하지 않은 리프레시 토큰입니다."),
+}
+
 enum class UserExceptionCode(
     override val code: String,
     override val message: String
 ) : ApiExceptionCode {
     USER_NOT_FOUND("USER-100", "사용자를 찾을 수 없습니다."),
-    INVALID_TOKEN("USER-101", "유효하지 않은 토큰입니다."),
-    INVALID_REFRESH_TOKEN("USER-002", "유효하지 않은 리프레시 토큰입니다."),
-    USER_NOT_ACTIVE("USER-103", "이메일 인증이 완료되지 않은 사용자입니다."),
+    USER_NOT_ACTIVE("USER-101", "이메일 인증이 완료되지 않은 사용자입니다."),
 
     EMAIL_ALREADY_EXISTS("USER-201", "이미 존재하는 이메일입니다."),
     USER_ALREADY_ACTIVE("USER-202", "이미 이메일 인증이 완료된 사용자입니다."),

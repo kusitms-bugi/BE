@@ -1,6 +1,9 @@
 package com.github.kusitms_bugi.global.security
 
+import com.github.kusitms_bugi.global.exception.ApiException
+import com.github.kusitms_bugi.global.exception.AuthExceptionCode
 import com.github.kusitms_bugi.global.properties.JwtProperties
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.data.redis.core.RedisTemplate
@@ -45,11 +48,6 @@ class JwtTokenProvider(
         return storedToken == refreshToken
     }
 
-    fun deleteRefreshToken(userId: UUID) {
-        val key = "refresh_token:$userId"
-        redisTemplate.delete(key)
-    }
-
     private fun createToken(userId: UUID, validity: Long, tokenType: TokenType): String {
         val now = Date()
 
@@ -72,6 +70,8 @@ class JwtTokenProvider(
                 .build()
                 .parseSignedClaims(token)
             true
+        } catch (_: ExpiredJwtException) {
+            throw ApiException(AuthExceptionCode.TOKEN_EXPIRED)
         } catch (_: Exception) {
             false
         }

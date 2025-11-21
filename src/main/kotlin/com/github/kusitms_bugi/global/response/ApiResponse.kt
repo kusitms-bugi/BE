@@ -31,7 +31,7 @@ data class ApiResponse<T>(
             )
         }
         
-        fun <T> failure(exception: ApiException): ApiResponse<T> {
+        fun failure(exception: ApiException): ApiResponse<Unit> {
             return ApiResponse(
                 timestamp = LocalDateTime.now(),
                 success = false,

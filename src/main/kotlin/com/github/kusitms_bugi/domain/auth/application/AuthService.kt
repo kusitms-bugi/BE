@@ -14,6 +14,7 @@ import com.github.kusitms_bugi.domain.auth.presentation.dto.response.SignupRespo
 import com.github.kusitms_bugi.domain.auth.presentation.dto.response.toResponse
 import com.github.kusitms_bugi.domain.user.domain.UserRepository
 import com.github.kusitms_bugi.global.exception.ApiException
+import com.github.kusitms_bugi.global.exception.AuthExceptionCode
 import com.github.kusitms_bugi.global.exception.UserExceptionCode
 import com.github.kusitms_bugi.global.mail.EmailService
 import com.github.kusitms_bugi.global.security.EmailVerificationTokenProvider
@@ -57,7 +58,7 @@ class AuthService(
     fun verifyEmail(request: VerifyEmailRequest) {
         request.token
             .takeIf { emailVerificationTokenProvider.validateToken(it) }
-            ?: throw ApiException(UserExceptionCode.INVALID_TOKEN)
+            ?: throw ApiException(AuthExceptionCode.INVALID_TOKEN)
 
         emailVerificationTokenProvider.getUserIdFromToken(request.token)
             .let { userRepository.findById(it) ?: throw ApiException(UserExceptionCode.USER_NOT_FOUND) }
@@ -89,7 +90,7 @@ class AuthService(
     @Transactional(readOnly = true)
     fun refreshToken(request: RefreshTokenRequest): RefreshTokenResponse =
         request.refreshToken
-            .also { if (!jwtTokenProvider.validateRefreshToken(it)) throw ApiException(UserExceptionCode.INVALID_REFRESH_TOKEN) }
+            .also { if (!jwtTokenProvider.validateRefreshToken(it)) throw ApiException(AuthExceptionCode.INVALID_REFRESH_TOKEN) }
             .let { jwtTokenProvider.getUserIdFromRefreshToken(it) }
             .let { userRepository.findById(it) ?: throw ApiException(UserExceptionCode.USER_NOT_FOUND) }
             .also { if (!it.active) throw ApiException(UserExceptionCode.USER_NOT_ACTIVE) }
