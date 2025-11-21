@@ -6,7 +6,6 @@ import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import kotlin.math.round
 
 @Service
 @Transactional(readOnly = true)
@@ -22,23 +21,16 @@ class PostureGraphService(
             today.minusDays(offset.toLong())
         }.reversed()
 
-        val sessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+        val scoresByDate = sessionJpaRepository.getAverageScoresByDate(
+            user.id,
             startDate.atStartOfDay(),
             today.atTime(23, 59, 59)
-        )
-
-        val sessionsByDay = sessions.groupBy { session ->
-            session.createdAt.toLocalDate()
+        ).associate { result ->
+            LocalDate.parse(result[0] as String) to (result[1] as Number).toInt()
         }
 
         val points = days.associateWith { day ->
-            sessionsByDay[day]
-                ?.mapNotNull { it.score }
-                ?.takeIf { it.isNotEmpty() }
-                ?.average()
-                ?.let { round(it).toInt() }
-                ?: 0
+            scoresByDate[day] ?: 0
         }
 
         return PostureGraphResponse(points)

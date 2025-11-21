@@ -1,11 +1,11 @@
 package com.github.kusitms_bugi.domain.dashboard.application
 
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.LevelResponse
-import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.*
 import kotlin.math.pow
 
 @Service
@@ -15,8 +15,7 @@ class LevelService(
 ) {
 
     fun getLevel(user: User): LevelResponse {
-        val sessions = sessionJpaRepository.findByUser(user)
-        val totalDistance = calculateTotalDistance(sessions)
+        val totalDistance = calculateTotalDistanceFromDb(user.id)
         val currentLevel = calculateLevel(totalDistance)
         val levelStartDistance = calculateLevelStartDistance(currentLevel)
         val currentProgress = (totalDistance - levelStartDistance).toInt()
@@ -29,15 +28,16 @@ class LevelService(
         )
     }
 
-    private fun calculateTotalDistance(sessions: List<Session>): Double {
-        return sessions.sumOf { session ->
-            val levelDurations = session.getLevelDurations()
-
-            LEVEL_SPEEDS.entries.sumOf { (level, speed) ->
-                val durationMillis = levelDurations[level] ?: 0L
-                val durationHours = durationMillis / 1000.0 / 3600.0
-                durationHours * speed
+    private fun calculateTotalDistanceFromDb(userId: UUID): Double {
+        val levelDurations = sessionJpaRepository.calculateLevelDurationsForUser(userId)
+            .associate { result ->
+                (result[0] as Number).toInt() to (result[1] as Number).toLong()
             }
+
+        return LEVEL_SPEEDS.entries.sumOf { (level, speed) ->
+            val durationMillis = levelDurations[level] ?: 0L
+            val durationHours = durationMillis / 1000.0 / 3600.0
+            durationHours * speed
         }
     }
 

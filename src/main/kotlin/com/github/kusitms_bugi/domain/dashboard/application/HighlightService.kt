@@ -2,7 +2,6 @@ package com.github.kusitms_bugi.domain.dashboard.application
 
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetHighlightRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.HighlightResponse
-import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.stereotype.Service
@@ -31,21 +30,21 @@ class HighlightService(
         val lastWeekStart = thisWeekStart.minusWeeks(1)
         val lastWeekEnd = thisWeekStart.minusDays(1)
 
-        val thisWeekSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+        val current = sessionJpaRepository.getHighlightStats(
+            user.id,
             thisWeekStart.atStartOfDay(),
             today.atTime(23, 59, 59)
-        )
+        ) ?: 0
 
-        val lastWeekSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+        val previous = sessionJpaRepository.getHighlightStats(
+            user.id,
             lastWeekStart.atStartOfDay(),
             lastWeekEnd.atTime(23, 59, 59)
-        )
+        ) ?: 0
 
         return HighlightResponse(
-            current = calculateSession(thisWeekSessions),
-            previous = calculateSession(lastWeekSessions)
+            current = current,
+            previous = previous
         )
     }
 
@@ -54,32 +53,21 @@ class HighlightService(
         val thisMonth = YearMonth.from(today)
         val lastMonth = thisMonth.minusMonths(1)
 
-        val thisMonthSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+        val current = sessionJpaRepository.getHighlightStats(
+            user.id,
             thisMonth.atDay(1).atStartOfDay(),
             thisMonth.atEndOfMonth().atTime(23, 59, 59)
-        )
+        ) ?: 0
 
-        val lastMonthSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+        val previous = sessionJpaRepository.getHighlightStats(
+            user.id,
             lastMonth.atDay(1).atStartOfDay(),
             lastMonth.atEndOfMonth().atTime(23, 59, 59)
-        )
+        ) ?: 0
 
         return HighlightResponse(
-            current = calculateSession(thisMonthSessions),
-            previous = calculateSession(lastMonthSessions)
+            current = current,
+            previous = previous
         )
-    }
-
-    private fun calculateSession(sessions: List<Session>): Int {
-        if (sessions.isEmpty()) return 0
-
-        val millis = sessions.sumOf { session ->
-            val levelDurations = session.getLevelDurations()
-            (levelDurations[4] ?: 0L) + (levelDurations[5] ?: 0L) + (levelDurations[6] ?: 0L)
-        }
-
-        return ((millis / sessions.size) / 1000).toInt()
     }
 }

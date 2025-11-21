@@ -7,6 +7,7 @@ import com.github.kusitms_bugi.domain.session.domain.SessionStatusHistoryField
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import com.github.kusitms_bugi.global.entity.BaseEntity
 import jakarta.persistence.*
+import org.hibernate.annotations.BatchSize
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.Duration
@@ -22,10 +23,12 @@ class Session(
 
     @OrderBy("timestamp ASC")
     @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @BatchSize(size = 25)
     override var statusHistory: MutableList<SessionStatusHistory> = mutableListOf(),
 
     @OrderBy("timestamp ASC")
     @OneToMany(mappedBy = "session", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @BatchSize(size = 25)
     override var metrics: MutableSet<SessionMetric> = mutableSetOf(),
 
     @Column(name = "score", nullable = true)

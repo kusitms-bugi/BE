@@ -2,7 +2,6 @@ package com.github.kusitms_bugi.domain.dashboard.application
 
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetAttendanceRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.AttendanceResponse
-import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.stereotype.Service
@@ -10,6 +9,15 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.math.round
+
+data class DailyStats(
+    val date: LocalDate,
+    val activeMinutes: Int,
+    val badDurationMillis: Long,
+    val goodDurationMillis: Long,
+    val totalDurationMillis: Long,
+    val avgLevel: Double
+)
 
 @Service
 @Transactional(readOnly = true)
@@ -19,51 +27,49 @@ class AttendanceService(
 
     fun getAttendance(user: User, request: GetAttendanceRequest): AttendanceResponse {
         val yearMonth = YearMonth.of(request.year, request.month)
+        val today = LocalDate.now()
 
-        val sessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user = user,
-            startDate = yearMonth.atDay(1).atStartOfDay(),
-            endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59)
+        val earliestDate = minOf(
+            yearMonth.atDay(1),
+            today.minusDays(13)
         )
 
-        val sessionsByDate = sessions
-            .groupBy { it.createdAt.toLocalDate() }
-            .mapValues { (_, sessionsOnDate) ->
-                sessionsOnDate.sumOf { session ->
-                    (session.calculateTotalActiveSeconds() / 60.0).toInt()
-                }
-            }
+        val allStats = sessionJpaRepository.getAttendanceStats(
+            user.id,
+            earliestDate.atStartOfDay(),
+            yearMonth.atEndOfMonth().atTime(23, 59, 59)
+        ).map { result ->
+            DailyStats(
+                date = LocalDate.parse(result[0] as String),
+                activeMinutes = (result[1] as Number).toInt(),
+                badDurationMillis = (result[2] as Number).toLong(),
+                goodDurationMillis = (result[3] as Number).toLong(),
+                totalDurationMillis = (result[4] as Number).toLong(),
+                avgLevel = (result[5] as Number).toDouble()
+            )
+        }.associateBy { it.date }
 
-        val today = LocalDate.now()
         val attendances = (1..yearMonth.lengthOfMonth()).associate { day ->
             val date = yearMonth.atDay(day)
             val value = when {
                 date.isAfter(today) -> null
-                else -> sessionsByDate[date] ?: 0
+                else -> allStats[date]?.activeMinutes ?: 0
             }
             date to value
         }
 
-        val recentSevenDaysStart = LocalDate.now().minusDays(6)
-        val previousSevenDaysStart = LocalDate.now().minusDays(13)
-        val previousSevenDaysEnd = LocalDate.now().minusDays(7)
+        val recentStats = (0..6).mapNotNull { offset ->
+            allStats[today.minusDays(offset.toLong())]
+        }
 
-        val recentSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
-            recentSevenDaysStart.atStartOfDay(),
-            LocalDate.now().atTime(23, 59, 59)
-        )
+        val previousStats = (7..13).mapNotNull { offset ->
+            allStats[today.minusDays(offset.toLong())]
+        }
 
-        val previousSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
-            previousSevenDaysStart.atStartOfDay(),
-            previousSevenDaysEnd.atTime(23, 59, 59)
-        )
-
-        val title = calculateTitle(recentSessions, previousSessions)
-        val content1 = calculateContent1(user, recentSessions)
-        val content2 = calculateContent2(user, recentSessions)
-        val subContent = calculateSubContent(recentSessions)
+        val title = calculateTitle(recentStats, previousStats)
+        val content1 = calculateContent1(recentStats, allStats.values.toList())
+        val content2 = calculateContent2(recentStats, allStats.values.toList())
+        val subContent = calculateSubContent(recentStats)
 
         return AttendanceResponse(
             attendances = attendances,
@@ -74,11 +80,11 @@ class AttendanceService(
         )
     }
 
-    private fun calculateTitle(recentSessions: List<Session>, previousSessions: List<Session>): String {
-        val recentBadTime = calculateTotalBadPostureTime(recentSessions)
-        val previousBadTime = calculateTotalBadPostureTime(previousSessions)
-        val recentGoodRatio = calculateGoodPostureRatio(recentSessions)
-        val previousGoodRatio = calculateGoodPostureRatio(previousSessions)
+    private fun calculateTitle(recentStats: List<DailyStats>, previousStats: List<DailyStats>): String {
+        val recentBadTime = recentStats.sumOf { it.badDurationMillis }
+        val previousBadTime = previousStats.sumOf { it.badDurationMillis }
+        val recentGoodRatio = calculateGoodRatio(recentStats)
+        val previousGoodRatio = calculateGoodRatio(previousStats)
 
         val badTimeIncreased = recentBadTime > previousBadTime
         val goodRatioDecreased = recentGoodRatio < previousGoodRatio
@@ -90,26 +96,22 @@ class AttendanceService(
         }
     }
 
-    private fun calculateContent1(user: User, recentSessions: List<Session>): String {
-        val recentSevenDaysStart = LocalDate.now().minusDays(6)
-        val allUsersSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
-            recentSevenDaysStart.atStartOfDay(),
-            LocalDate.now().atTime(23, 59, 59)
-        )
-
-        val myAverageScore = recentSessions
-            .mapNotNull { it.score?.toDouble() }
+    private fun calculateContent1(recentStats: List<DailyStats>, allStats: List<DailyStats>): String {
+        // Use average level as a proxy for score comparison
+        val myAverageLevel = recentStats
+            .filter { it.avgLevel > 0 }
+            .map { it.avgLevel }
             .takeIf { it.isNotEmpty() }
-            ?.average() ?: 50.0
+            ?.average() ?: 3.5
 
-        val allScores = allUsersSessions
-            .mapNotNull { it.score?.toDouble() }
-            .takeIf { it.isNotEmpty() } ?: listOf(50.0)
+        val allLevels = allStats
+            .filter { it.avgLevel > 0 }
+            .map { it.avgLevel }
+            .takeIf { it.isNotEmpty() } ?: listOf(3.5)
 
-        val higherCount = allScores.count { score -> score < myAverageScore }
-        val percentile = if (allScores.isNotEmpty()) {
-            round((higherCount.toDouble() / allScores.size) * 100).toInt()
+        val worseCount = allLevels.count { level -> level > myAverageLevel }
+        val percentile = if (allLevels.isNotEmpty()) {
+            round((worseCount.toDouble() / allLevels.size) * 100).toInt()
         } else {
             50
         }
@@ -117,16 +119,9 @@ class AttendanceService(
         return "전체 사용자 중, 당신의 자세는 상위 ${percentile}%예요"
     }
 
-    private fun calculateContent2(user: User, recentSessions: List<Session>): String {
-        val recentSevenDaysStart = LocalDate.now().minusDays(6)
-        val allUsersSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
-            recentSevenDaysStart.atStartOfDay(),
-            LocalDate.now().atTime(23, 59, 59)
-        )
-
-        val myGoodRatio = calculateGoodPostureRatio(recentSessions)
-        val allUsersGoodRatio = calculateGoodPostureRatio(allUsersSessions)
+    private fun calculateContent2(recentStats: List<DailyStats>, allStats: List<DailyStats>): String {
+        val myGoodRatio = calculateGoodRatio(recentStats)
+        val allUsersGoodRatio = calculateGoodRatio(allStats)
 
         val difference = round(myGoodRatio - allUsersGoodRatio).toInt()
 
@@ -137,14 +132,10 @@ class AttendanceService(
         }
     }
 
-    private fun calculateSubContent(sessions: List<Session>): String {
-        val averageLevel = sessions
-            .flatMap { session ->
-                val levelDurations = session.getLevelDurations()
-                (1..6).flatMap { level ->
-                    List((levelDurations[level] ?: 0L).toInt()) { level }
-                }
-            }
+    private fun calculateSubContent(stats: List<DailyStats>): String {
+        val averageLevel = stats
+            .filter { it.avgLevel > 0 }
+            .map { it.avgLevel }
             .takeIf { it.isNotEmpty() }
             ?.average() ?: 3.0
 
@@ -157,25 +148,11 @@ class AttendanceService(
         }
     }
 
-    private fun calculateTotalBadPostureTime(sessions: List<Session>): Long {
-        return sessions.sumOf { session ->
-            val levelDurations = session.getLevelDurations()
-            (levelDurations[4] ?: 0L) + (levelDurations[5] ?: 0L) + (levelDurations[6] ?: 0L)
-        }
-    }
-
-    private fun calculateGoodPostureRatio(sessions: List<Session>): Double {
-        val totalDuration = sessions.sumOf { session ->
-            session.getLevelDurations().values.sum()
-        }.toDouble()
-
+    private fun calculateGoodRatio(stats: List<DailyStats>): Double {
+        val totalDuration = stats.sumOf { it.totalDurationMillis }.toDouble()
         if (totalDuration == 0.0) return 0.0
 
-        val goodDuration = sessions.sumOf { session ->
-            val levelDurations = session.getLevelDurations()
-            (levelDurations[1] ?: 0L) + (levelDurations[2] ?: 0L) + (levelDurations[3] ?: 0L)
-        }
-
+        val goodDuration = stats.sumOf { it.goodDurationMillis }
         return (goodDuration / totalDuration) * 100.0
     }
 }

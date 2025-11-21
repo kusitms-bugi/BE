@@ -1,7 +1,6 @@
 package com.github.kusitms_bugi.domain.dashboard.application
 
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.PosturePatternResponse
-import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
 import com.github.kusitms_bugi.domain.user.infrastructure.jpa.User
 import org.springframework.stereotype.Service
@@ -9,6 +8,15 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+
+data class PosturePatternStats(
+    val hourOfDay: Int,
+    val dayOfWeek: Int,
+    val badPostureDurationMillis: Long,
+    val goodPostureDurationMillis: Long,
+    val recoveryCount: Int,
+    val avgRecoveryTimeMillis: Long
+)
 
 @Service
 @Transactional(readOnly = true)
@@ -18,15 +26,25 @@ class PosturePatternService(
 
     fun getPosturePattern(user: User): PosturePatternResponse {
         val sevenDaysAgo = LocalDate.now().minusDays(6)
-        val sessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
-            user,
+
+        val stats = sessionJpaRepository.getPosturePatternStats(
+            user.id,
             sevenDaysAgo.atStartOfDay(),
             LocalDate.now().atTime(23, 59, 59)
-        )
+        ).map { result ->
+            PosturePatternStats(
+                hourOfDay = (result[0] as Number).toInt(),
+                dayOfWeek = (result[1] as Number).toInt(),
+                badPostureDurationMillis = (result[2] as Number).toLong(),
+                goodPostureDurationMillis = (result[3] as Number).toLong(),
+                recoveryCount = (result[4] as Number).toInt(),
+                avgRecoveryTimeMillis = (result[5] as Number).toLong()
+            )
+        }
 
-        val worstTime = calculateWorstTime(sessions)
-        val worstDay = calculateWorstDay(sessions)
-        val recovery = calculateRecovery(sessions)
+        val worstTime = calculateWorstTimeFromStats(stats)
+        val worstDay = calculateWorstDayFromStats(stats)
+        val recovery = calculateRecoveryFromStats(stats)
 
         return PosturePatternResponse(
             worstTime = worstTime,
@@ -36,76 +54,34 @@ class PosturePatternService(
         )
     }
 
-    private fun calculateWorstTime(sessions: List<Session>): LocalTime {
-        val badPostureDurationByHour = mutableMapOf<Int, Long>()
+    private fun calculateWorstTimeFromStats(stats: List<PosturePatternStats>): LocalTime {
+        val goodPostureDurationByHour = stats
+            .groupBy { it.hourOfDay }
+            .mapValues { (_, hourStats) -> hourStats.sumOf { it.goodPostureDurationMillis } }
 
-        sessions.forEach { session ->
-            val metrics = session.getActiveMetrics()
-
-            metrics.zipWithNext().forEach { (current, next) ->
-                if (current.score >= 4.0) {
-                    val hour = current.timestamp.hour
-                    val durationMillis = java.time.Duration.between(current.timestamp, next.timestamp).toMillis()
-                    val pausedDuration = session.calculatePausedDuration(current.timestamp, next.timestamp).toMillis()
-                    val activeDuration = durationMillis - pausedDuration
-
-                    if (activeDuration > 0) {
-                        badPostureDurationByHour[hour] = badPostureDurationByHour.getOrDefault(hour, 0L) + activeDuration
-                    }
-                }
-            }
-        }
-
-        val worstHour = badPostureDurationByHour.maxByOrNull { it.value }?.key ?: 12
+        val worstHour = goodPostureDurationByHour.maxByOrNull { it.value }?.key ?: 12
         return LocalTime.of(worstHour, 0, 0)
     }
 
-    private fun calculateWorstDay(sessions: List<Session>): DayOfWeek {
-        val badPostureDurationByDay = mutableMapOf<DayOfWeek, Long>()
+    private fun calculateWorstDayFromStats(stats: List<PosturePatternStats>): DayOfWeek {
+        val goodPostureDurationByDay = stats
+            .groupBy { it.dayOfWeek }
+            .mapValues { (_, dayStats) -> dayStats.sumOf { it.goodPostureDurationMillis } }
 
-        sessions.forEach { session ->
-            val dayOfWeek = session.createdAt.dayOfWeek
-            val levelDurations = session.getLevelDurations()
-            val badPostureDuration = (levelDurations[4] ?: 0L) +
-                                     (levelDurations[5] ?: 0L) +
-                                     (levelDurations[6] ?: 0L)
-
-            badPostureDurationByDay[dayOfWeek] = badPostureDurationByDay.getOrDefault(dayOfWeek, 0L) + badPostureDuration
+        val worstDayNum = goodPostureDurationByDay.maxByOrNull { it.value }?.key ?: 1
+        return when (worstDayNum) {
+            0 -> DayOfWeek.SUNDAY
+            else -> DayOfWeek.of(worstDayNum)
         }
-
-        return badPostureDurationByDay.maxByOrNull { it.value }?.key ?: DayOfWeek.MONDAY
     }
 
-    private fun calculateRecovery(sessions: List<Session>): Int {
-        val recoveryTimes = mutableListOf<Long>()
+    private fun calculateRecoveryFromStats(stats: List<PosturePatternStats>): Int {
+        val totalRecoveryTime = stats.sumOf { it.avgRecoveryTimeMillis * it.recoveryCount }
+        val totalRecoveryCount = stats.sumOf { it.recoveryCount }
 
-        sessions.forEach { session ->
-            val metrics = session.getActiveMetrics()
-            var badPostureStartTime: java.time.LocalDateTime? = null
+        if (totalRecoveryCount == 0) return 0
 
-            metrics.forEach { metric ->
-                when {
-                    metric.score >= 4.0 && badPostureStartTime == null -> {
-                        badPostureStartTime = metric.timestamp
-                    }
-                    metric.score < 4.0 && badPostureStartTime != null -> {
-                        val startTime = badPostureStartTime!!
-                        val durationMillis = java.time.Duration.between(startTime, metric.timestamp).toMillis()
-                        val pausedDuration = session.calculatePausedDuration(startTime, metric.timestamp).toMillis()
-                        val activeDuration = durationMillis - pausedDuration
-
-                        if (activeDuration > 0) {
-                            recoveryTimes.add(activeDuration)
-                        }
-                        badPostureStartTime = null
-                    }
-                }
-            }
-        }
-
-        if (recoveryTimes.isEmpty()) return 0
-
-        val averageRecoveryMillis = recoveryTimes.average()
+        val averageRecoveryMillis = totalRecoveryTime.toDouble() / totalRecoveryCount
         return (averageRecoveryMillis / 1000).toInt()
     }
 
