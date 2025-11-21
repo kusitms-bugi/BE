@@ -32,7 +32,7 @@ class PosturePatternService(
             worstTime = worstTime,
             worstDay = worstDay,
             recovery = recovery,
-            stretching = DEFAULT_STRETCHING
+            stretching = getRandomStretching(user)
         )
     }
 
@@ -109,7 +109,25 @@ class PosturePatternService(
         return (averageRecoveryMillis / 1000 / 60).toInt()
     }
 
+    private fun getRandomStretching(user: User): String {
+        val today = LocalDate.now()
+        val seed = "${user.id}-${today}".hashCode()
+        val index = (seed and 0x7fffffff) % STRETCHING_LIST.size
+        return STRETCHING_LIST[index]
+    }
+
     companion object {
-        private const val DEFAULT_STRETCHING = "목돌리기"
+        private val STRETCHING_LIST = listOf(
+            "턱 당기기",
+            "목 측면 스트레칭",
+            "목 전방 굴곡 스트레칭",
+            "목 후방 신전",
+            "날개뼈 모으기",
+            "벽 밀기",
+            "가슴 펴기 (Chest Stretch - Doorway)",
+            "손깍지 끼고 가슴 열기",
+            "흉추 신전",
+            "고양이-낙타 자세"
+        )
     }
 }
