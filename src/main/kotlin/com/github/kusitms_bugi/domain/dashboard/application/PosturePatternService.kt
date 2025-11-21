@@ -100,7 +100,7 @@ class PosturePatternService(
             "목 후방 신전",
             "날개뼈 모으기",
             "벽 밀기",
-            "가슴 펴기 (Chest Stretch - Doorway)",
+            "가슴 펴기",
             "손깍지 끼고 가슴 열기",
             "흉추 신전",
             "고양이-낙타 자세"
