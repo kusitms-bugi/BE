@@ -86,8 +86,8 @@ class AttendanceService(
         val recentGoodRatio = calculateGoodRatio(recentStats)
         val previousGoodRatio = calculateGoodRatio(previousStats)
 
-        val badTimeIncreased = recentBadTime > previousBadTime
-        val goodRatioDecreased = recentGoodRatio < previousGoodRatio
+        val badTimeIncreased = recentBadTime < previousBadTime
+        val goodRatioDecreased = recentGoodRatio > previousGoodRatio
 
         return when {
             !badTimeIncreased && !goodRatioDecreased -> "잘하고 있어요!"
