@@ -1,6 +1,7 @@
 package com.github.kusitms_bugi.domain.dashboard.presentation
 
-import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetPeriodRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetAttendanceRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetHighlightRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.*
 import com.github.kusitms_bugi.global.response.ApiResponse
 import com.github.kusitms_bugi.global.security.CustomUserDetails
@@ -26,7 +27,7 @@ interface DashboardApi {
     @GetMapping("/attendance")
     fun getAttendance(
         @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @Validated request: GetAttendanceRequest
     ): ApiResponse<AttendanceResponse>
 
     @Operation(summary = "레벨 도달 현황 조회")
@@ -45,7 +46,7 @@ interface DashboardApi {
     @GetMapping("/highlight")
     fun getHighlight(
         @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @Validated request: GetHighlightRequest
     ): ApiResponse<HighlightResponse>
 
     @Operation(summary = "자세 패턴 분석 조회")

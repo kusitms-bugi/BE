@@ -1,6 +1,6 @@
 package com.github.kusitms_bugi.domain.dashboard.application
 
-import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetPeriodRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetAttendanceRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.AttendanceResponse
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
@@ -17,41 +17,32 @@ class AttendanceService(
     private val sessionJpaRepository: SessionJpaRepository
 ) {
 
-    fun getAttendance(user: User, request: GetPeriodRequest): AttendanceResponse {
-        val (startDate, endDate) = when (request.period) {
-            GetPeriodRequest.Period.MONTHLY -> {
-                val yearMonth = YearMonth.of(request.year, request.month ?: 1)
-                yearMonth.atDay(1).atStartOfDay() to yearMonth.atEndOfMonth().atTime(23, 59, 59)
-            }
-            GetPeriodRequest.Period.YEARLY -> {
-                return AttendanceResponse(
-                    attendances = emptyMap(),
-                    title = "",
-                    content1 = "",
-                    content2 = "",
-                    subContent = ""
-                )
-            }
-            GetPeriodRequest.Period.WEEKLY -> {
-                return AttendanceResponse(
-                    attendances = emptyMap(),
-                    title = "",
-                    content1 = "",
-                    content2 = "",
-                    subContent = ""
-                )
-            }
-        }
+    fun getAttendance(user: User, request: GetAttendanceRequest): AttendanceResponse {
+        val yearMonth = YearMonth.of(request.year, request.month)
 
-        val sessions = sessionJpaRepository.findByUserAndCreatedAtBetween(user, startDate, endDate)
+        val sessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
+            user = user,
+            startDate = yearMonth.atDay(1).atStartOfDay(),
+            endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59)
+        )
 
-        val attendances = sessions
+        val sessionsByDate = sessions
             .groupBy { it.createdAt.toLocalDate() }
             .mapValues { (_, sessionsOnDate) ->
                 sessionsOnDate.sumOf { session ->
                     (session.calculateTotalActiveSeconds() / 60.0).toInt()
                 }
             }
+
+        val today = LocalDate.now()
+        val attendances = (1..yearMonth.lengthOfMonth()).associate { day ->
+            val date = yearMonth.atDay(day)
+            val value = when {
+                date.isAfter(today) -> null
+                else -> sessionsByDate[date] ?: 0
+            }
+            date to value
+        }
 
         val recentSevenDaysStart = LocalDate.now().minusDays(6)
         val previousSevenDaysStart = LocalDate.now().minusDays(13)

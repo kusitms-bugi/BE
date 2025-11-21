@@ -6,10 +6,10 @@ import java.time.LocalDate
 @Schema(description = "출석 현황 응답")
 data class AttendanceResponse(
     @field:Schema(
-        description = "출석 데이터",
-        example = "{\"2025-01-01\": 3, \"2025-01-02\": 5, \"2025-01-03\": 2}"
+        description = "출석 데이터 (오늘 이전 날짜는 데이터 없으면 0, 오늘 이후 날짜는 null)",
+        example = "{\"2025-01-01\": 3, \"2025-01-02\": 5, \"2025-01-03\": 2, \"2025-01-25\": null}"
     )
-    val attendances: Map<LocalDate, Int>,
+    val attendances: Map<LocalDate, Int?>,
 
     @field:Schema(
         description = "피드백 제목",

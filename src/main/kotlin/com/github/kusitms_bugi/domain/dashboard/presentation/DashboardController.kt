@@ -1,7 +1,8 @@
 package com.github.kusitms_bugi.domain.dashboard.presentation
 
 import com.github.kusitms_bugi.domain.dashboard.application.*
-import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetPeriodRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetAttendanceRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetHighlightRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.*
 import com.github.kusitms_bugi.global.response.ApiResponse
 import com.github.kusitms_bugi.global.security.CustomUserDetails
@@ -27,7 +28,7 @@ class DashboardController(
 
     override fun getAttendance(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @Validated request: GetAttendanceRequest
     ): ApiResponse<AttendanceResponse> {
         return ApiResponse.success(attendanceService.getAttendance(userDetails.user, request))
     }
@@ -46,7 +47,7 @@ class DashboardController(
 
     override fun getHighlight(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Validated request: GetPeriodRequest
+        @Validated request: GetHighlightRequest
     ): ApiResponse<HighlightResponse> {
         return ApiResponse.success(highlightService.getHighlight(userDetails.user, request))
     }

@@ -106,7 +106,7 @@ class PosturePatternService(
         if (recoveryTimes.isEmpty()) return 0
 
         val averageRecoveryMillis = recoveryTimes.average()
-        return (averageRecoveryMillis / 1000 / 60).toInt()
+        return (averageRecoveryMillis / 1000).toInt()
     }
 
     private fun getRandomStretching(user: User): String {

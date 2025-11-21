@@ -1,6 +1,6 @@
 package com.github.kusitms_bugi.domain.dashboard.application
 
-import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetPeriodRequest
+import com.github.kusitms_bugi.domain.dashboard.presentation.dto.request.GetHighlightRequest
 import com.github.kusitms_bugi.domain.dashboard.presentation.dto.response.HighlightResponse
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.Session
 import com.github.kusitms_bugi.domain.session.infrastructure.jpa.SessionJpaRepository
@@ -18,11 +18,10 @@ class HighlightService(
     private val sessionJpaRepository: SessionJpaRepository
 ) {
 
-    fun getHighlight(user: User, request: GetPeriodRequest): HighlightResponse {
+    fun getHighlight(user: User, request: GetHighlightRequest): HighlightResponse {
         return when (request.period) {
-            GetPeriodRequest.Period.WEEKLY -> calculateWeeklyHighlight(user)
-            GetPeriodRequest.Period.MONTHLY -> calculateMonthlyHighlight(user, request.year, request.month ?: 1)
-            GetPeriodRequest.Period.YEARLY -> HighlightResponse(current = 0, previous = 0)
+            GetHighlightRequest.Period.WEEKLY -> calculateWeeklyHighlight(user)
+            GetHighlightRequest.Period.MONTHLY -> calculateMonthlyHighlight(user)
         }
     }
 
@@ -45,13 +44,14 @@ class HighlightService(
         )
 
         return HighlightResponse(
-            current = calculateAverageBadPostureMinutes(thisWeekSessions),
-            previous = calculateAverageBadPostureMinutes(lastWeekSessions)
+            current = calculateSession(thisWeekSessions),
+            previous = calculateSession(lastWeekSessions)
         )
     }
 
-    private fun calculateMonthlyHighlight(user: User, year: Int, month: Int): HighlightResponse {
-        val thisMonth = YearMonth.of(year, month)
+    private fun calculateMonthlyHighlight(user: User): HighlightResponse {
+        val today = LocalDate.now()
+        val thisMonth = YearMonth.from(today)
         val lastMonth = thisMonth.minusMonths(1)
 
         val thisMonthSessions = sessionJpaRepository.findByUserAndCreatedAtBetween(
@@ -67,20 +67,19 @@ class HighlightService(
         )
 
         return HighlightResponse(
-            current = calculateAverageBadPostureMinutes(thisMonthSessions),
-            previous = calculateAverageBadPostureMinutes(lastMonthSessions)
+            current = calculateSession(thisMonthSessions),
+            previous = calculateSession(lastMonthSessions)
         )
     }
 
-    private fun calculateAverageBadPostureMinutes(sessions: List<Session>): Int {
+    private fun calculateSession(sessions: List<Session>): Int {
         if (sessions.isEmpty()) return 0
 
-        val totalBadPostureMillis = sessions.sumOf { session ->
+        val millis = sessions.sumOf { session ->
             val levelDurations = session.getLevelDurations()
             (levelDurations[4] ?: 0L) + (levelDurations[5] ?: 0L) + (levelDurations[6] ?: 0L)
         }
 
-        val averageMillis = totalBadPostureMillis / sessions.size
-        return (averageMillis / 1000 / 60).toInt()
+        return ((millis / sessions.size) / 1000).toInt()
     }
 }
