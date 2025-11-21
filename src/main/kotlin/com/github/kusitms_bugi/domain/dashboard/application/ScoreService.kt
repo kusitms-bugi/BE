@@ -60,6 +60,9 @@ class ScoreService {
     ): List<Double> {
         if (activeMetrics.isEmpty()) return emptyList()
 
+        // Pause 구간들을 한 번만 미리 계산하여 재사용 (성능 최적화)
+        val pauseRanges = getPauseRangesFromSession(session)
+
         val streaks = mutableListOf<Double>()
         var streakStartTime: LocalDateTime? = null
 
@@ -70,7 +73,7 @@ class ScoreService {
                 }
             } else {
                 streakStartTime?.let { start ->
-                    val activeDuration = calculateActiveDuration(session, start, metric.timestamp)
+                    val activeDuration = calculateActiveDuration(start, metric.timestamp, pauseRanges)
                     if (activeDuration > 0) {
                         streaks.add(activeDuration)
                     }
@@ -81,7 +84,7 @@ class ScoreService {
 
         streakStartTime?.let { start ->
             val lastMetric = activeMetrics.last()
-            val activeDuration = calculateActiveDuration(session, start, lastMetric.timestamp)
+            val activeDuration = calculateActiveDuration(start, lastMetric.timestamp, pauseRanges)
             if (activeDuration > 0) {
                 streaks.add(activeDuration)
             }
@@ -90,10 +93,46 @@ class ScoreService {
         return streaks
     }
 
-    private fun calculateActiveDuration(session: Session, start: LocalDateTime, end: LocalDateTime): Double {
+    private fun getPauseRangesFromSession(session: Session): List<Pair<LocalDateTime, LocalDateTime>> {
+        val ranges = mutableListOf<Pair<LocalDateTime, LocalDateTime>>()
+        var pauseStartTime: LocalDateTime? = null
+
+        session.statusHistory.forEach { history ->
+            when (history.status) {
+                com.github.kusitms_bugi.domain.session.domain.SessionStatus.PAUSED -> {
+                    pauseStartTime = history.timestamp
+                }
+                com.github.kusitms_bugi.domain.session.domain.SessionStatus.RESUMED -> {
+                    pauseStartTime?.let { pauseStart ->
+                        ranges.add(pauseStart to history.timestamp)
+                        pauseStartTime = null
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        return ranges
+    }
+
+    private fun calculateActiveDuration(
+        start: LocalDateTime,
+        end: LocalDateTime,
+        pauseRanges: List<Pair<LocalDateTime, LocalDateTime>>
+    ): Double {
         val duration = Duration.between(start, end)
-        val pausedDuration = session.calculatePausedDuration(start, end)
-        return duration.minus(pausedDuration).toMillis() / 1000.0 / 60.0
+        var pausedMillis = 0L
+
+        pauseRanges.forEach { (pauseStart, pauseEnd) ->
+            val overlapStart = maxOf(start, pauseStart)
+            val overlapEnd = minOf(end, pauseEnd)
+
+            if (overlapStart < overlapEnd) {
+                pausedMillis += java.time.temporal.ChronoUnit.MILLIS.between(overlapStart, overlapEnd)
+            }
+        }
+
+        return (duration.toMillis() - pausedMillis) / 1000.0 / 60.0
     }
 
     private fun calculateRawScore(levelDurations: Map<Int, Long>): Double {

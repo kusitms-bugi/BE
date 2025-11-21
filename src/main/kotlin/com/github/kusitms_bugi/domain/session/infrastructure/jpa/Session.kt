@@ -97,10 +97,15 @@ class Session(
         val activeMetrics = getActiveMetrics()
         val levelDurations = (1..6).associateWith { 0L }.toMutableMap()
 
+        // Pause 구간들을 한 번만 미리 계산 (O(m) where m = statusHistory 수)
+        val pauseRanges = getPauseRanges()
+
         activeMetrics.zipWithNext().forEach { (current, next) ->
             val level = current.score.coerceIn(1, 6)
             val duration = Duration.between(current.timestamp, next.timestamp)
-            val pausedDuration = calculatePausedDuration(current.timestamp, next.timestamp)
+
+            // 미리 계산된 pause 구간을 사용하여 pausedDuration 계산 (O(p) where p = pauseRanges 수)
+            val pausedDuration = calculatePausedDurationFromRanges(current.timestamp, next.timestamp, pauseRanges)
             val activeDuration = duration.minus(pausedDuration).toMillis()
 
             if (activeDuration > 0) {
@@ -111,12 +116,57 @@ class Session(
         return levelDurations
     }
 
+    private fun getPauseRanges(): List<Pair<LocalDateTime, LocalDateTime>> {
+        val ranges = mutableListOf<Pair<LocalDateTime, LocalDateTime>>()
+        var pauseStartTime: LocalDateTime? = null
+
+        statusHistory.forEach { history ->
+            when (history.status) {
+                SessionStatus.PAUSED -> {
+                    pauseStartTime = history.timestamp
+                }
+                SessionStatus.RESUMED -> {
+                    pauseStartTime?.let { pauseStart ->
+                        ranges.add(pauseStart to history.timestamp)
+                        pauseStartTime = null
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        return ranges
+    }
+
+    private fun calculatePausedDurationFromRanges(
+        start: LocalDateTime,
+        end: LocalDateTime,
+        pauseRanges: List<Pair<LocalDateTime, LocalDateTime>>
+    ): Duration {
+        var pausedMillis = 0L
+
+        pauseRanges.forEach { (pauseStart, pauseEnd) ->
+            // pause 구간이 [start, end] 범위와 겹치는 부분 계산
+            val overlapStart = maxOf(start, pauseStart)
+            val overlapEnd = minOf(end, pauseEnd)
+
+            if (overlapStart < overlapEnd) {
+                pausedMillis += ChronoUnit.MILLIS.between(overlapStart, overlapEnd)
+            }
+        }
+
+        return Duration.ofMillis(pausedMillis)
+    }
+
     fun calculateGoodSeconds(): Long {
+        // Pause 구간들을 한 번만 미리 계산하여 재사용
+        val pauseRanges = getPauseRanges()
+
         return metrics.zipWithNext()
             .filter { (_, current) -> current.score >= 4 }
             .sumOf { (prev, current) ->
                 val duration = ChronoUnit.MILLIS.between(prev.timestamp, current.timestamp)
-                val pausedDuration = calculatePausedDuration(prev.timestamp, current.timestamp).toMillis()
+                val pausedDuration = calculatePausedDurationFromRanges(prev.timestamp, current.timestamp, pauseRanges).toMillis()
                 duration - pausedDuration
             } / 1_000
     }
