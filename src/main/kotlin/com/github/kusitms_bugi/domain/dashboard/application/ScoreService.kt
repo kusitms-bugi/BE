@@ -40,10 +40,10 @@ class ScoreService {
         if (activeMetrics.size < 2) return 0
 
         var flips = 0
-        var previousSide = if (activeMetrics.first().score < 3.0) "good" else "bad"
+        var previousSide = if (activeMetrics.first().score <= 3) "good" else "bad"
 
         for (i in 1 until activeMetrics.size) {
-            val currentSide = if (activeMetrics[i].score < 3.0) "good" else "bad"
+            val currentSide = if (activeMetrics[i].score <= 3) "good" else "bad"
             if (currentSide != previousSide) {
                 flips++
                 previousSide = currentSide
@@ -156,7 +156,7 @@ class ScoreService {
         activeMetrics: List<SessionMetric>,
         sessionLength: Double
     ): Double {
-        val goodStreaks = extractStreaks(activeMetrics, session) { score -> score >= 4 }
+        val goodStreaks = extractStreaks(activeMetrics, session) { score -> score <= 3 }
         if (goodStreaks.isEmpty()) return 0.0
 
         val baseGood = goodStreaks.sumOf { streak ->
@@ -180,7 +180,7 @@ class ScoreService {
         activeMetrics: List<SessionMetric>,
         sessionLength: Double
     ): Double {
-        val badStreaks = extractStreaks(activeMetrics, session) { score -> score <= 3 }
+        val badStreaks = extractStreaks(activeMetrics, session) { score -> score >= 4 }
         if (badStreaks.isEmpty()) return 0.0
 
         val baseBad = badStreaks.sumOf { streak ->

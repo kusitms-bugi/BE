@@ -159,16 +159,21 @@ class Session(
     }
 
     fun calculateGoodSeconds(): Long {
-        // Pause 구간들을 한 번만 미리 계산하여 재사용
         val pauseRanges = getPauseRanges()
+        val activeMetrics = getActiveMetrics()
 
-        return metrics.zipWithNext()
-            .filter { (_, current) -> current.score >= 4 }
+        val totalMillis = activeMetrics.zipWithNext()
+            .filter { (_, current) -> current.score <= 3 }
             .sumOf { (prev, current) ->
                 val duration = ChronoUnit.MILLIS.between(prev.timestamp, current.timestamp)
                 val pausedDuration = calculatePausedDurationFromRanges(prev.timestamp, current.timestamp, pauseRanges).toMillis()
-                duration - pausedDuration
-            } / 1_000
+                val result = duration - pausedDuration
+                println("prev=${prev.timestamp}, current=${current.timestamp}, score=${current.score}, duration=$duration, paused=$pausedDuration, result=$result")
+                result
+            }
+
+        println("totalMillis=$totalMillis, goodSeconds=${totalMillis / 1_000}")
+        return totalMillis / 1_000
     }
 }
 
