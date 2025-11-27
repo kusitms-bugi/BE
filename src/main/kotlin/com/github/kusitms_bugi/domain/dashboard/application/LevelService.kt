@@ -71,12 +71,12 @@ class LevelService(
 
     companion object {
         private val LEVEL_SPEEDS = mapOf(
-            1 to 0.1,
-            2 to 50.0,
-            3 to 200.0,
-            4 to 500.0,
-            5 to 1500.0,
-            6 to 3000.0
+            1 to 3000.0,
+            2 to 1500.0,
+            3 to 500.0,
+            4 to 200.0,
+            5 to 50.0,
+            6 to 0.1
         )
 
         private const val BASE_DISTANCE = 1500.0
