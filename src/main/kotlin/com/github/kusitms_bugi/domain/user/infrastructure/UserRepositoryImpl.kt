@@ -22,4 +22,8 @@ class UserRepositoryImpl(
     override fun findByEmail(email: String): User? {
         return userJpaRepository.findByEmail(email)
     }
+
+    override fun deleteById(id: UUID) {
+        userJpaRepository.deleteById(id)
+    }
 }

@@ -33,4 +33,22 @@ class EmailService(
         mailSender.send(message)
     }
 
+    fun sendDownloadEmail(email: String) {
+        val subject = "다운로드 안내"
+
+        val context = Context()
+        context.setVariable("email", email)
+        val content = templateEngine.process("download", context)
+
+        val message = mailSender.createMimeMessage()
+        val helper = MimeMessageHelper(message, true, "UTF-8")
+
+        helper.setFrom(mailProperties.from)
+        helper.setTo(email)
+        helper.setSubject(subject)
+        helper.setText(content, true)
+
+        mailSender.send(message)
+    }
+
 }
