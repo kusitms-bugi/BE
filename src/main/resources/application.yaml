@@ -6,6 +6,7 @@ spring:
       - flyway
       - frontend
       - jwt
+      - landing
       - mail
       - redis
       - server

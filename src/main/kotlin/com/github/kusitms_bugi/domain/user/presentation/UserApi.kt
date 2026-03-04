@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 
@@ -19,4 +20,10 @@ interface UserApi {
     fun getMyProfile(
         @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ApiResponse<MyProfileResponse>
+
+    @Operation(summary = "회원 탈퇴")
+    @DeleteMapping("/me")
+    fun withdraw(
+        @Parameter(hidden = true) @AuthenticationPrincipal userDetails: CustomUserDetails
+    ): ApiResponse<Unit>
 }

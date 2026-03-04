@@ -41,6 +41,7 @@ enum class UserExceptionCode(
 
     EMAIL_ALREADY_EXISTS("USER-201", "이미 존재하는 이메일입니다."),
     USER_ALREADY_ACTIVE("USER-202", "이미 이메일 인증이 완료된 사용자입니다."),
+    USER_ALREADY_WITHDRAWN("USER-203", "이미 탈퇴한 사용자입니다."),
 }
 
 enum class SessionExceptionCode(

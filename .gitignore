@@ -42,3 +42,7 @@ out/
 ### Environment ###
 .env*
 !.env.template
+
+### Claude ###
+.omc
+.claude

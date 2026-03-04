@@ -40,8 +40,12 @@ class AuthService(
 
     @Transactional
     fun signup(request: SignupRequest): SignupResponse {
-        userRepository.findByEmail(request.email)?.let {
-            throw ApiException(UserExceptionCode.EMAIL_ALREADY_EXISTS)
+        userRepository.findByEmail(request.email)?.let { existingUser ->
+            if (existingUser.isDeleted()) {
+                userRepository.delete(existingUser)
+            } else {
+                throw ApiException(UserExceptionCode.EMAIL_ALREADY_EXISTS)
+            }
         }
 
         return request
