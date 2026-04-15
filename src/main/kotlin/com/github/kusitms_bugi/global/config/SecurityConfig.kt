@@ -45,7 +45,9 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers("/dashboard/**").authenticated()
                     .requestMatchers("/sessions/**").authenticated()
+                    .requestMatchers("/users/**").authenticated()
                     .anyRequest().permitAll()
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
