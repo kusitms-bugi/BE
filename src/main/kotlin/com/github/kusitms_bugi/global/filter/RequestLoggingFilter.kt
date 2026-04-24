@@ -14,6 +14,16 @@ class RequestLoggingFilter : OncePerRequestFilter() {
 
     private val _logger = LoggerFactory.getLogger(RequestLoggingFilter::class.java)
 
+    private val sensitiveFields = listOf(
+        "password", "passwd", "secret", "credential",
+        "token", "accessToken", "refreshToken", "access_token", "refresh_token",
+        "authorization", "apiKey", "api_key"
+    )
+
+    private val maskPattern = sensitiveFields.joinToString("|") { field ->
+        """("$field"\s*:\s*)"[^"]*""""
+    }.toRegex(RegexOption.IGNORE_CASE)
+
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -44,8 +54,8 @@ class RequestLoggingFilter : OncePerRequestFilter() {
         val status = response.status
         val clientIp = getClientIp(request)
 
-        val requestBody = getRequestBody(request)
-        val responseBody = getResponseBody(response)
+        val requestBody = maskSensitiveData(getRequestBody(request))
+        val responseBody = maskSensitiveData(getResponseBody(response))
 
         val logMessage = "HTTP Request/Response - $method $uri$queryString - Status: $status - Duration: ${duration}ms - IP: $clientIp - Request Body: $requestBody - Response Body: $responseBody"
         _logger.info(logMessage)
@@ -66,6 +76,13 @@ class RequestLoggingFilter : OncePerRequestFilter() {
             String(content, Charsets.UTF_8).take(1000)
         } else {
             "Empty"
+        }
+    }
+
+    private fun maskSensitiveData(body: String): String {
+        if (body == "Empty") return body
+        return maskPattern.replace(body) { match ->
+            "${match.groupValues[1]}\"***MASKED***\""
         }
     }
 

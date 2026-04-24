@@ -8,3 +8,11 @@ spring:
       connect-timeout: 30000ms
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 3000ms
+        shutdown-timeout: 200ms
